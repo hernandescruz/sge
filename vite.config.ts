@@ -19,7 +19,7 @@ export default defineConfig({
         name: 'SGE - Sistema de Gestão de Estoque',
         short_name: 'SGE Almox',
         description: 'Controle de Almoxarifado Industrial',
-        theme_color: '#1976d2',
+        theme_color: 'rgba(42,0,23,0.89)',
         background_color: '#ffffff',
         display: 'standalone',
         icons: [
