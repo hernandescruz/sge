@@ -47,6 +47,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         { text: 'Usuários', icon: <PeopleIcon />, path: '/usuarios', roles: ['ADMIN'] },
         { text: 'Centros de Custo', icon: <SettingsIcon />, path: '/admin/centros-custo', roles: ['ADMIN', 'GERENTE'] },
         { text: 'Finalidades', icon: <SettingsIcon />, path: '/admin/finalidades', roles: ['ADMIN', 'GERENTE'] },
+        { text: 'Etiquetas', icon: <SettingsIcon />, path: '/labels', roles: ['ADMIN', 'GERENTE'] },
         { text: 'Solicitantes', icon: <PeopleIcon />, path: '/admin/solicitantes', roles: ['ADMIN', 'GERENTE', 'OPERADOR'] },
     ];
 
