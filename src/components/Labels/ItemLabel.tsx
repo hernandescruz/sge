@@ -1,4 +1,4 @@
-import { Box, Typography, Paper } from '@mui/material';
+import { Box, Typography, Divider } from '@mui/material';
 import { QRCodeSVG } from 'qrcode.react';
 import { Item } from '../../types';
 
@@ -8,45 +8,81 @@ interface ItemLabelProps {
 
 export const ItemLabel = ({ item }: ItemLabelProps) => {
     return (
-        <Paper
-            variant="outlined"
+        <Box
+            className="printable-label"
             sx={{
-                width: '300px', // Tamanho padrão para etiquetas
-                p: 2,
+                width: '58mm',
+                height: '40mm',
                 display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                pageBreakInside: 'avoid', // Evita que a etiqueta corte entre páginas ao imprimir
-                mb: 2,
-                border: '2px solid #000'
+                flexDirection: 'column',
+                p: '2mm',
+                boxSizing: 'border-box',
+                overflow: 'hidden',
+                backgroundColor: '#fff',
+                color: '#000',
+                // Estilo para garantir o corte no rolo térmico
+                pageBreakAfter: 'always',
             }}
         >
-            {/* O QR Code gerado a partir do Código do Item */}
-            <Box>
-                <QRCodeSVG
-                    value={String(item.codigoItem)}
-                    size={80}
-                    level="H" // Nível de correção de erro alto para ambientes industriais
-                />
+            {/* 1. PARTE SUPERIOR: DESCRIÇÃO (Até 2 linhas) */}
+            <Box sx={{ height: '12mm', overflow: 'hidden', mb: 0.5 }}>
+                <Typography
+                    sx={{
+                        fontSize: '9pt',
+                        fontWeight: 'bold',
+                        lineHeight: 1.1,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2, // Limita a 2 linhas
+                        WebkitBoxOrient: 'vertical',
+                        textAlign: 'center'
+                    }}
+                >
+                    {item.descricao.toUpperCase()}
+                </Typography>
             </Box>
 
-            <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>
-                    HRC - SGE ALMOX
-                </Typography>
-                <Typography variant="h6" sx={{ fontSize: '1rem', lineHeight: 1.2, mb: 0.5 }}>
-                    {item.descricao}
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                    CÓD: {item.codigoItem}
-                </Typography>
-                <Typography variant="caption" sx={{ display: 'block' }}>
-                    LOCAL: {item.localizacao || 'N/A'}
-                </Typography>
-                <Typography variant="caption">
-                    UNID: {item.unidadeMedida}
+            <Divider sx={{ mb: 1, borderColor: '#000' }} />
+
+            {/* 2. PARTE CENTRAL: QR CODE + DADOS TÉCNICOS */}
+            <Box sx={{ display: 'flex', flexGrow: 1, alignItems: 'center' }}>
+                {/* QR Code à esquerda */}
+                <Box sx={{ mr: 1.5 }}>
+                    <QRCodeSVG
+                        value={String(item.codigoItem)}
+                        size={75} // Aproximadamente 20mm
+                        level="M"
+                    />
+                </Box>
+
+                {/* Dados à direita */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.2 }}>
+                    <Typography sx={{ fontSize: '11pt', fontWeight: '900' }}>
+                        CÓD: {item.codigoItem}
+                    </Typography>
+
+                    <Typography sx={{ fontSize: '8pt', fontWeight: 'bold' }}>
+                        LOC: {item.localizacao || '---'}
+                    </Typography>
+
+                    <Typography sx={{ fontSize: '8pt' }}>
+                        {item.unidadeMedida}
+                    </Typography>
+                </Box>
+            </Box>
+
+            {/* 3. RODAPÉ: NOME DO SISTEMA CENTRALIZADO */}
+            <Box sx={{ mt: 'auto', pt: 0.5 }}>
+                <Typography
+                    sx={{
+                        fontSize: '5pt',
+                        fontWeight: 400,
+                        textAlign: 'center',
+                        letterSpacing: '1px'
+                    }}
+                >
+                    HRC SISTEMAS - SGE v1.0
                 </Typography>
             </Box>
-        </Paper>
+        </Box>
     );
 };

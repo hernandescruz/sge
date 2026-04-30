@@ -9,13 +9,19 @@ export const LoginPage: React.FC = () => {
     const [error, setError] = useState('');
     const { signIn } = useAuth();
     const navigate = useNavigate();
-
+    const userJson = localStorage.getItem('@Almox:user');
+    const loggedUser = userJson ? JSON.parse(userJson) : null;
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         try {
             setError('');
             await signIn(usuario, password);
-            navigate('/dashboard');
+            if (loggedUser?.perfil === 'OPERADOR') {
+                navigate('/estoque');
+            } else {
+                navigate('/dashboard');
+            }
+
         } catch (err: any) {
             setError('Usuário ou senha inválidos!');
         }

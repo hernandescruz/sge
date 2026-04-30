@@ -13,6 +13,7 @@ import {PurposePage} from "./pages/Admin/PurposePage";
 import {CostCenterPage} from "./pages/Admin/CostCenterPage";
 import {RequesterPage} from "./pages/Admin/RequesterPage";
 import { ReloadPrompt } from './components/ReloadPrompt';
+import { AuditPage } from "./pages/Admin/AuditPage";
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
     const { signed, loading } = useAuth();
@@ -21,6 +22,17 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
     return <>{children}</>;
 };
 
+const HomeRedirect = () => {
+    const { user, signed } = useAuth();
+    if (!signed) return <Navigate to="/login" />;
+
+    // Se for OPERADOR, a "casa" dele é o estoque.
+    // Se for ADMIN/GERENTE, a "casa" é o dashboard.
+    if (user?.perfil === 'OPERADOR') {
+        return <Navigate to="/estoque" />;
+    }
+    return <Navigate to="/dashboard" />;
+};
 
 const RoleRoute = ({ children, allowedRoles }: { children: JSX.Element, allowedRoles: string[] }) => {
     const { user, signed, loading } = useAuth();
@@ -28,9 +40,9 @@ const RoleRoute = ({ children, allowedRoles }: { children: JSX.Element, allowedR
     if (loading) return <div>Carregando...</div>;
     if (!signed) return <Navigate to="/login" />;
 
-    // Se o perfil do usuário não estiver na lista permitida, manda pro Dashboard
+    // Se o perfil do usuário não estiver na lista permitida, manda pro Inicio
     if (!allowedRoles.includes(user?.perfil || '')) {
-        return <Navigate to="/dashboard" />;
+        return <Navigate to="/" />;
     }
 
     return <Layout>{children}</Layout>;
@@ -44,6 +56,8 @@ function App() {
                 <Routes>
                     {/* Rota Pública */}
                     <Route path="/login" element={<LoginPage />} />
+
+                    <Route path="/" element={<HomeRedirect />} />
 
                     {/* Rotas Privadas (Sempre dentro do PrivateRoute + Layout) */}
                     <Route path="/dashboard" element={
@@ -112,7 +126,14 @@ function App() {
                         </RoleRoute>
                     } />
 
-                    <Route path="*" element={<Navigate to="/dashboard" />} />
+                    <Route path="/admin/audit" element={
+                        <RoleRoute allowedRoles={['ADMIN']}>
+                            <AuditPage />
+                        </RoleRoute>
+                    } />
+
+
+                    <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
             </AuthProvider>
         </BrowserRouter>

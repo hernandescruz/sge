@@ -14,8 +14,12 @@ export const LabelsPage = () => {
 
     useEffect(() => {
         const load = async () => {
-            const res = await api.get<Item[]>('/itens');
-            setItems(res.data.filter(i => i.ativo));
+            try {
+                const res = await api.get<Item[]>('/itens');
+                setItems(res.data.filter(i => i.ativo));
+            } catch (error) {
+                console.error("Erro ao carregar itens", error);
+            }
         };
         load();
     }, []);
@@ -27,17 +31,55 @@ export const LabelsPage = () => {
     };
 
     const handlePrint = () => {
-        window.print(); // Abre o diálogo de impressão do navegador
+        window.print();
     };
 
     return (
         <Box>
-            {/* Cabeçalho que some na impressão */}
-            <Box sx={{ display: 'block', '@media print': { display: 'none' } }}>
+            {/* CSS DE IMPRESSÃO OTIMIZADO (Leve e sem looping) */}
+            <style>
+                {`
+                    /* Estilo para a tela normal */
+                    .only-print { display: none; }
+
+                    @media print {
+                        /* 1. Esconde os blocos principais da interface do sistema */
+                        header, nav, footer, .no-print, .MuiAppBar-root, .MuiDrawer-root { 
+                            display: none !important; 
+                        }
+
+                        /* 2. Garante que o container de etiquetas ocupe o topo */
+                        .only-print { 
+                            display: block !important; 
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            width: 58mm;
+                        }
+
+                        /* 3. Configuração da Etiqueta Térmica */
+                        @page { 
+                            size: 58mm 40mm; 
+                            margin: 0; 
+                        }
+
+                        body { 
+                            margin: 0 !important; 
+                            padding: 0 !important; 
+                        }
+                    }
+                `}
+            </style>
+
+            {/* INTERFACE DE SELEÇÃO (Escondida na impressão via classe .no-print) */}
+            <Box className="no-print">
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-                    <Typography variant="h4">Gerador de Etiquetas</Typography>
+                    <Typography variant="h4" sx={{ color: '#2a0017', fontWeight: 'bold' }}>
+                        Gerador de Etiquetas
+                    </Typography>
                     <Button
                         variant="contained"
+                        sx={{ bgcolor: '#2a0017', '&:hover': { bgcolor: '#40001d' } }}
                         startIcon={<PrintIcon />}
                         onClick={handlePrint}
                         disabled={selectedIds.length === 0}
@@ -46,8 +88,8 @@ export const LabelsPage = () => {
                     </Button>
                 </Stack>
 
-                <Paper sx={{ p: 2, mb: 4 }}>
-                    <Typography variant="h6" sx={{ mb: 2 }}>Selecione os itens para gerar etiquetas:</Typography>
+                <Paper sx={{ p: 2, mb: 4, boxShadow: 3 }}>
+                    <Typography variant="h6" sx={{ mb: 2 }}>Selecione os itens:</Typography>
                     <Grid container spacing={1}>
                         {items.map(item => (
                             <Grid item xs={12} sm={6} md={4} key={item.id}>
@@ -58,7 +100,11 @@ export const LabelsPage = () => {
                                             onChange={() => toggleItem(Number(item.id))}
                                         />
                                     }
-                                    label={`${item.codigoItem} - ${item.descricao}`}
+                                    label={
+                                        <Typography variant="body2">
+                                            <strong>{item.codigoItem}</strong> - {item.descricao}
+                                        </Typography>
+                                    }
                                 />
                             </Grid>
                         ))}
@@ -66,25 +112,14 @@ export const LabelsPage = () => {
                 </Paper>
             </Box>
 
-            {/* ÁREA DE IMPRESSÃO (Visível apenas na hora de imprimir ou no preview) */}
-            <Box sx={{
-                display: 'none',
-                '@media print': {
-                    display: 'block',
-                    padding: 0,
-                    margin: 0
+            {/* ÁREA DE IMPRESSÃO (Aparece apenas no papel/impressora) */}
+            <Box className="only-print">
+                {items
+                    .filter(i => selectedIds.includes(Number(i.id)))
+                    .map(item => (
+                        <ItemLabel key={item.id} item={item} />
+                    ))
                 }
-            }}>
-                <Grid container spacing={2}>
-                    {items
-                        .filter(i => selectedIds.includes(Number(i.id)))
-                        .map(item => (
-                            <Grid item key={item.id}>
-                                <ItemLabel item={item} />
-                            </Grid>
-                        ))
-                    }
-                </Grid>
             </Box>
         </Box>
     );

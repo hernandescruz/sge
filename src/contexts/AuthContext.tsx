@@ -48,6 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Salva no LocalStorage para não deslogar ao dar F5
         localStorage.setItem('@Almox:token', token);
         localStorage.setItem('@Almox:user', JSON.stringify(userLogged));
+
     }
 
     function signOut() {

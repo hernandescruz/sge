@@ -36,7 +36,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
     const handleCloseAdmin = () => setAnchorEl(null);
 
     const operacionais = [
-        { text: 'Início', icon: <DashboardIcon />, path: '/dashboard', roles: ['ADMIN', 'GERENTE', 'OPERADOR'] },
+        { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard', roles: ['ADMIN', 'GERENTE'] },
         { text: 'Estoque', icon: <InventoryIcon />, path: '/estoque', roles: ['ADMIN', 'GERENTE', 'OPERADOR'] },
         { text: 'Movimentar', icon: <SwapHorizIcon />, path: '/movimentacoes', roles: ['ADMIN', 'GERENTE', 'OPERADOR'] },
     ];
@@ -49,6 +49,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         { text: 'Finalidades', icon: <SettingsIcon />, path: '/admin/finalidades', roles: ['ADMIN', 'GERENTE'] },
         { text: 'Etiquetas', icon: <SettingsIcon />, path: '/labels', roles: ['ADMIN', 'GERENTE'] },
         { text: 'Solicitantes', icon: <PeopleIcon />, path: '/admin/solicitantes', roles: ['ADMIN', 'GERENTE', 'OPERADOR'] },
+        { text: 'Trilha de Auditoria', icon: <HistoryIcon />, path: '/admin/audit', roles: ['ADMIN'] },
     ];
 
     // Conteúdo do Menu Lateral (Mobile)

@@ -43,15 +43,24 @@ export const DashboardPage = () => {
     useEffect(() => {
         const carregarDados = async () => {
             try {
+                // Para o Dashboard calcular o valor correto, precisamos de mais itens.
+                // Vamos pedir os primeiros 2000 itens de uma vez.
                 const [resItems, resMovs, resAlerts] = await Promise.all([
-                    api.get<Item[]>('/itens'),
+                    api.get('/itens?size=200000'), // Pedimos um tamanho grande para o cálculo
                     api.get<Movimentacao[]>('/movimentacoes'),
-                    api.get<Item[]>('/itens/busca?abaixoMinimo=true')
+                    api.get('/itens/busca?abaixoMinimo=true')
                 ]);
-                setItems(resItems.data);
+
+                // AJUSTE AQUI: Pegamos o .content das respostas paginadas
+                setItems(resItems.data.content || []);
                 setMovimentacoes(resMovs.data);
-                setItemsAbaixoMinimo(resAlerts.data);
-            } catch (error) { console.error(error); }
+
+                // O seu endpoint de busca também pode ter virado página
+                setItemsAbaixoMinimo(resAlerts.data.content || resAlerts.data);
+
+            } catch (error) {
+                console.error("Erro ao carregar dashboard", error);
+            }
         };
         carregarDados();
     }, []);

@@ -73,3 +73,12 @@ export interface Movimentacao {
     solicitante: Solicitante;
     createdAt: string;
 }
+
+export interface AuditoriaLog {
+    id: number;
+    dataHora: string;
+    usuario: string;
+    modulo: string;
+    acao: string;
+    detalhes: string;
+}
