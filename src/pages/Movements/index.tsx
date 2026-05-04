@@ -1,14 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
     Box, Typography, TextField, Button, MenuItem, Grid,
     Paper, Autocomplete, Alert, CircularProgress, InputAdornment, IconButton, Stack
 } from '@mui/material';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import {Item, CentroCusto, Finalidade, MovimentacaoRequestDTO, Solicitante} from '../../types';
+import { Item, CentroCusto, Finalidade, MovimentacaoRequestDTO, Solicitante } from '../../types';
 import { BarcodeScanner } from '../../components/Scanner/BarcodeScanner';
 
 export const MovementsPage = () => {
@@ -18,6 +16,7 @@ export const MovementsPage = () => {
     const [items, setItems] = useState<Item[]>([]);
     const [centrosCusto, setCentrosCusto] = useState<CentroCusto[]>([]);
     const [finalidades, setFinalidades] = useState<Finalidade[]>([]);
+    const [solicitantes, setSolicitantes] = useState<Solicitante[]>([]);
 
     // Estados do formulário
     const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -31,55 +30,60 @@ export const MovementsPage = () => {
     const [isScanning, setIsScanning] = useState(false);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ text: '', type: 'success' as 'success' | 'error' });
-    const [solicitantes, setSolicitantes] = useState<Solicitante[]>([]);
 
-    // Carregar dados iniciais ao abrir a página
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                // Buscamos tudo em paralelo para ganhar tempo
-                const [resCC, resFin, resItems, resSol] = await Promise.all([
-                    api.get<CentroCusto[]>('/centros-custo'),
-                    api.get<Finalidade[]>('/finalidades'),
-                    api.get<Item[]>('/itens'),
-                    api.get<Solicitante[]>('/solicitantes')
-                ]);
+    // --- FUNÇÃO AUXILIAR PARA EXTRAIR LISTA (Evita erro de Paginação) ---
+    const extrairLista = (obj: any) => {
+        if (!obj) return [];
+        if (obj.content && Array.isArray(obj.content)) return obj.content;
+        if (Array.isArray(obj)) return obj;
+        return [];
+    };
 
-                const ccOperacionais = resCC.data.filter(cc =>
-                    cc.ativo && cc.nome.toUpperCase() !== 'INVENTARIO'
-                );
-                setCentrosCusto(ccOperacionais);
+    // --- FUNÇÃO DE CARREGAMENTO (Pode ser chamada a qualquer momento) ---
+    const loadData = useCallback(async () => {
+        try {
+            const [resCC, resFin, resItems, resSol] = await Promise.all([
+                api.get('/centros-custo'),
+                api.get('/finalidades'),
+                api.get('/itens?size=10000'), // Base grande para o scanner/busca
+                api.get('/solicitantes')
+            ]);
 
-                // 2. Filtramos as Finalidades: Ativas E que NÃO sejam "INVENTARIO"
-                const finOperacionais = resFin.data.filter(f =>
-                    f.ativo && f.nome.toUpperCase() !== 'INVENTARIO'
-                );
-                setFinalidades(finOperacionais);
+            // Processamento dos Itens
+            const listaItens = extrairLista(resItems.data);
+            setItems(listaItens.filter((i: any) => i.ativo === true));
 
-                // 3. Filtramos os Solicitantes: Ativos E que NÃO sejam "ADM"
-                const solOperacionais = resSol.data.filter(s =>
-                    s.ativo && s.nome.toUpperCase() !== 'ADM'
-                );
-                setSolicitantes(solOperacionais);
+            // Processamento de Centros de Custo (Filtra Inventário)
+            const listaCC = extrairLista(resCC.data);
+            setCentrosCusto(listaCC.filter((cc: any) =>
+                cc.ativo && cc.nome.toUpperCase() !== 'INVENTÁRIO' && cc.nome.toUpperCase() !== 'INVENTARIO'
+            ));
 
-                // 4. Filtramos apenas Itens ativos
-                const itensAtivos = resItems.data.filter(i => i.ativo);
-                setItems(itensAtivos);
+            // Processamento de Finalidades (Filtra Inventário)
+            const listaFin = extrairLista(resFin.data);
+            setFinalidades(listaFin.filter((f: any) =>
+                f.ativo && f.nome.toUpperCase() !== 'INVENTÁRIO' && f.nome.toUpperCase() !== 'INVENTARIO'
+            ));
 
-            } catch (error) {
-                console.error("Erro ao carregar dados", error);
-                setMessage({ text: 'Falha ao conectar com o servidor.', type: 'error' });
-            }
-        };
-        loadData();
+            // Processamento de Solicitantes (Filtra ADM)
+            const listaSol = extrairLista(resSol.data);
+            setSolicitantes(listaSol.filter((s: any) =>
+                s.ativo && s.nome.toUpperCase() !== 'ADM'
+            ));
+
+        } catch (error) {
+            console.error("Erro ao carregar dados", error);
+            setMessage({ text: 'Erro de conexão com o servidor.', type: 'error' });
+        }
     }, []);
 
-    // Função executada quando o scanner lê um código
+    // Carregar ao montar a página
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
     const handleScanResult = (decodedText: string) => {
         setIsScanning(false);
-
-        // Procuramos o item na lista local pelo código (EAN ou Código Interno)
-        // Convertemos para String para garantir a comparação correta
         const itemEncontrado = items.find(i => String(i.codigoItem) === decodedText);
 
         if (itemEncontrado) {
@@ -93,7 +97,6 @@ export const MovementsPage = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!selectedItem || !user) {
             setMessage({ text: 'Selecione um item válido.', type: 'error' });
             return;
@@ -103,33 +106,32 @@ export const MovementsPage = () => {
         setMessage({ text: '', type: 'success' });
 
         const payload: MovimentacaoRequestDTO = {
-            tipoMovimento: tipo,
+            tipoMovimento: tipo as any,
             itemId: Number(selectedItem.id),
             quantidade: Number(quantidade),
             usuarioId: user.id,
-            centroCustoId: Number(centroCustoId),
-            finalidadeId: Number(finalidadeId),
-            solicitanteId: Number(solicitanteId)
+            // Regra: Se for entrada, o Java ignora o 0 e usa os padrões. Se saída, usa o selecionado.
+            centroCustoId: tipo === 'SAIDA' ? Number(centroCustoId) : 0,
+            finalidadeId: tipo === 'SAIDA' ? Number(finalidadeId) : 0,
+            solicitanteId: tipo === 'SAIDA' ? Number(solicitanteId) : 0
         };
 
         try {
-            // Envia para o MovimentacaoController do Spring Boot
             await api.post('/movimentacoes', payload);
+            setMessage({ text: 'Movimentação registrada com sucesso!', type: 'success' });
 
-            setMessage({ text: 'Movimentação registrada e saldo atualizado!', type: 'success' });
-
-            // Limpa o formulário para a próxima entrada
+            // Limpeza do formulário
             setSelectedItem(null);
             setQuantidade('');
             setCentroCustoId('');
             setFinalidadeId('');
+            setSolicitanteId('');
 
-            // Opcional: Recarregar lista de itens para atualizar saldos locais
-            const resItems = await api.get<Item[]>('/itens');
-            setItems(resItems.data);
+            // --- ATUALIZAÇÃO SEGURA ---
+            // Chamamos a função loadData que já trata a paginação corretamente
+            await loadData();
 
         } catch (err: any) {
-            // Captura a mensagem de erro vinda do Java (Ex: "Saldo insuficiente")
             const erroMsg = err.response?.data || 'Erro ao registrar movimentação.';
             setMessage({ text: erroMsg, type: 'error' });
         } finally {
@@ -137,14 +139,10 @@ export const MovementsPage = () => {
         }
     };
 
-    // Se o usuário clicar no botão de scanner, mostramos apenas a câmera
     if (isScanning) {
         return (
             <Box sx={{ mt: 2 }}>
-                <BarcodeScanner
-                    onScanSuccess={handleScanResult}
-                    onClose={() => setIsScanning(false)}
-                />
+                <BarcodeScanner onScanSuccess={handleScanResult} onClose={() => setIsScanning(false)} />
             </Box>
         );
     }
