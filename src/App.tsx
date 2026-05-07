@@ -61,7 +61,7 @@ function App() {
 
                     {/* Rotas Privadas (Sempre dentro do PrivateRoute + Layout) */}
                     <Route path="/dashboard" element={
-                        <RoleRoute allowedRoles={['ADMIN', 'GERENTE', 'OPERADOR', 'CONSULTOR']}>
+                        <RoleRoute allowedRoles={['ADMIN', 'GERENTE',  'CONSULTOR']}>
                             <DashboardPage />
                         </RoleRoute>
                     } />

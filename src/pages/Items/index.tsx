@@ -159,19 +159,6 @@ export const ItemsPage = () => {
                                     <TableCell sx={{ fontWeight: item.ativo ? 'bold' : 'normal' }}>{item.descricao}</TableCell>
                                     <TableCell align="right">{item.estoqueAtual} {item.unidadeMedida}</TableCell>
 
-                                    {(user?.perfil === 'ADMIN' || user?.perfil === 'GERENTE') && (
-                                        <TableCell align="center">
-                                            <Stack direction="row" spacing={1} justifyContent="center">
-                                                <IconButton onClick={() => { setEditingItem(item); setOpenForm(true); }} color="primary" size="small" title="Editar">
-                                                    <EditIcon />
-                                                </IconButton>
-                                                <IconButton onClick={() => handleToggleStatus(Number(item.id))} color={item.ativo ? "error" : "success"} size="small">
-                                                    {item.ativo ? <BlockIcon /> : <CheckCircleIcon />}
-                                                </IconButton>
-                                            </Stack>
-                                        </TableCell>
-                                    )}
-
 
                                     <TableCell align="right">{formatarMoeda(Number(item.precoUnitario))}</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 'bold' }}>

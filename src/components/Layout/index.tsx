@@ -110,11 +110,16 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
 
                     {/* MENU DESKTOP */}
                     <Stack direction="row" spacing={1} sx={{ mr: 2, display: { xs: 'none', md: 'flex' } }}>
-                        {operacionais.map((item) => (
-                            <Button key={item.text} color="inherit" onClick={() => navigate(item.path)}>
-                                {item.text}
-                            </Button>
-                        ))}
+                        {operacionais.map((item) => {
+                            // Verifica se o perfil do usuário logado está na lista de perfis permitidos para este botão
+                            if (!item.roles.includes(user?.perfil || '')) return null;
+
+                            return (
+                                <Button key={item.text} color="inherit" onClick={() => navigate(item.path)}>
+                                    {item.text}
+                                </Button>
+                            );
+                        })}
 
                         {(user?.perfil === 'ADMIN' || user?.perfil === 'GERENTE') && (
                             <>
